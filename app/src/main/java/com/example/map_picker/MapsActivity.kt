@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.util.Log
 import android.util.Log.i
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -79,7 +80,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                         "raw", getPackageName()), this,markerManager, polygonManager, polylineManager, groundOverlayManager)
 
                 lay?.defaultPolygonStyle?.strokeColor = Color.TRANSPARENT
-                lay?.defaultPolygonStyle?.strokeWidth = 2F
+                lay?.defaultPolygonStyle?.strokeWidth = 4F
                 lay?.defaultPolygonStyle?.fillColor = Color.TRANSPARENT
 
                 layers.put(code.toString().toLowerCase(),
@@ -87,16 +88,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 layers.get(code.toString().toLowerCase())?.addLayerToMap()
                 onclcik = Layer.OnFeatureClickListener {
                     feature ->
-                    val begin = System.nanoTime()
+
                     var a: Int? = layers.get(code.toString().toLowerCase())?.defaultPolygonStyle?.fillColor
                     var b: Int?
                     if(a == Color.TRANSPARENT)
                     {
-                        a = Color.parseColor("#f44949")
+                        a = Color.parseColor("#96555C")
                         b = Color.BLACK
+                        Toast.makeText(this, "${code.toString()}: Highlighted",Toast.LENGTH_SHORT)
+                                .show()
                     }
                     else
                     {
+                        Toast.makeText(this, "${code.toString()}: Highlight removed",Toast.LENGTH_SHORT)
+                                .show()
                         a = Color.TRANSPARENT
                         b = Color.TRANSPARENT
                         country = ""
@@ -107,8 +112,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     layers.get(code.toString().toLowerCase())?.defaultPolygonStyle?.strokeColor = b
                     if(a != Color.TRANSPARENT)
                     country = code.toString().toLowerCase()
-                    val end = System.nanoTime()
-                    Log.i("Elapsed time in nanoseconds:", (end - begin).toString())
+
+
 
 
                 }
