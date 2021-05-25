@@ -4,8 +4,10 @@ import android.content.res.Resources
 import android.graphics.Color
 import android.location.Address
 import android.location.Geocoder
+import android.nfc.Tag
 import android.os.Bundle
 import android.util.Log
+import android.util.Log.i
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.gms.maps.GoogleMap
@@ -16,6 +18,7 @@ import com.google.maps.android.collections.GroundOverlayManager
 import com.google.maps.android.collections.MarkerManager
 import com.google.maps.android.collections.PolygonManager
 import com.google.maps.android.collections.PolylineManager
+import com.google.maps.android.data.Layer
 import com.google.maps.android.data.geojson.GeoJsonLayer
 import com.google.maps.android.data.kml.KmlLayer
 import org.json.JSONObject
@@ -36,6 +39,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     lateinit var obj:JSONObject
     lateinit var myModel: geojson
     var count:Int? = 0
+    lateinit var onclcik:Layer.OnFeatureClickListener
 
     //private var mapmodel: MapModel? = null
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,9 +64,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val groundOverlayManager = GroundOverlayManager(googleMap)
         val polygonManager = PolygonManager(googleMap)
         val polylineManager = PolylineManager(googleMap)
+
         for (code in isoCountryCodes)
-        {   if(code.toLowerCase()!="do")
         {
+        if(code.toLowerCase()!="do")
+        {
+
             var result: Boolean
             val test: Int = getResources().getIdentifier(code.toLowerCase(),
                     "raw", getPackageName())
@@ -71,11 +78,41 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 val lay: GeoJsonLayer? = GeoJsonLayer(googleMap, getResources().getIdentifier(code.toLowerCase(),
                         "raw", getPackageName()), this,markerManager, polygonManager, polylineManager, groundOverlayManager)
 
-                lay?.defaultPolygonStyle?.strokeColor = Color.BLACK
+                lay?.defaultPolygonStyle?.strokeColor = Color.TRANSPARENT
                 lay?.defaultPolygonStyle?.strokeWidth = 2F
-                lay?.defaultPolygonStyle?.fillColor = Color.rgb(197, 163, 204)
+                lay?.defaultPolygonStyle?.fillColor = Color.TRANSPARENT
+
                 layers.put(code.toString().toLowerCase(),
                         lay)
+                layers.get(code.toString().toLowerCase())?.addLayerToMap()
+                onclcik = Layer.OnFeatureClickListener {
+                    feature ->
+                    val begin = System.nanoTime()
+                    var a: Int? = layers.get(code.toString().toLowerCase())?.defaultPolygonStyle?.fillColor
+                    var b: Int?
+                    if(a == Color.TRANSPARENT)
+                    {
+                        a = Color.parseColor("#f44949")
+                        b = Color.BLACK
+                    }
+                    else
+                    {
+                        a = Color.TRANSPARENT
+                        b = Color.TRANSPARENT
+                        country = ""
+                    }
+                    layers.get(country)?.defaultPolygonStyle?.fillColor = Color.TRANSPARENT
+                    layers.get(country)?.defaultPolygonStyle?.strokeColor = Color.TRANSPARENT
+                    layers.get(code.toString().toLowerCase())?.defaultPolygonStyle?.fillColor = a
+                    layers.get(code.toString().toLowerCase())?.defaultPolygonStyle?.strokeColor = b
+                    if(a != Color.TRANSPARENT)
+                    country = code.toString().toLowerCase()
+                    val end = System.nanoTime()
+                    Log.i("Elapsed time in nanoseconds:", (end - begin).toString())
+
+
+                }
+                layers.get(code.toString().toLowerCase())?.setOnFeatureClickListener(onclcik)
             }
         }
             else
@@ -85,8 +122,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             lay?.defaultPolygonStyle?.strokeColor = Color.BLACK
             lay?.defaultPolygonStyle?.strokeWidth = 2F
             lay?.defaultPolygonStyle?.fillColor = Color.rgb(197, 163, 204)
-            layers.put(code.toString().toLowerCase(),
-                    lay)
+
+            layers.put(code.toString().toLowerCase(), lay)
+            layers.get(code.toString().toLowerCase())?.setOnFeatureClickListener(onclcik)
         }
 
 
@@ -109,30 +147,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
 
 
-        googleMap.setOnMapClickListener {
-
-            val geocoder = Geocoder(this, Locale.getDefault())
-            val addresses: List<Address> = geocoder.getFromLocation(it.latitude, it.longitude, 1)
-               if(country == addresses[0].countryCode.toLowerCase())
-               {
-                   layers.get(country)?.removeLayerFromMap()
-                   country = ""
-
-               }
-              else {
 
 
-                   layers.get(country)?.removeLayerFromMap()
-                   layers.get(addresses[0].countryCode.toLowerCase())?.addLayerToMap()
 
-                   country = addresses[0].countryCode.toLowerCase()
-                   layers.get(country)?.setOnFeatureClickListener {
-                       feature ->
-                       layers.get(country)?.removeLayerFromMap()
-                       country = ""
-                   }
-               }
-
-        }
     }
 }
