@@ -14,4 +14,4 @@
 
 ## Important notes
 * It works offline after google maps is cached
-* Another version which uses nomination api: [https://github.com/moumen7/MapPicker]
+* [Another version which uses nomination api](https://github.com/moumen7/MapPicker)
