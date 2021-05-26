@@ -1,5 +1,5 @@
 # Offline Map picker.
----
+
 ## Click any country from map and the country gets highlighted.
 
 ### Project Description.
