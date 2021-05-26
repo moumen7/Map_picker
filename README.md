@@ -1,8 +1,7 @@
-#Offline Map picker.
+# Offline Map picker.
 ---
-
 ## Click any country from map and the country gets highlighted.
----
+
 
 ## overview
 ---
