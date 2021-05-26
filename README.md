@@ -2,9 +2,6 @@
 ---
 ## Click any country from map and the country gets highlighted.
 
-
-## overview
----
 ### Project Description.
 
 An android application built with Kotlin language and using a stylized Google maps. It allows the user to pick any country and the country gets highlighted or dehighlighted. A toast shows with the Clicked country's Alpha-2 code.
