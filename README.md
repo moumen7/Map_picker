@@ -26,7 +26,7 @@ I used [this great repo for reverse geocoding offline](https://github.com/AReall
 ---
 
 ## Short Demo.
-<img src="https://user-images.githubusercontent.com/57041674/119538478-6eaf0600-bd8b-11eb-9cc0-d17827de4c8d.gif" width="250" height="550"/>
+<img src="https://user-images.githubusercontent.com/57041674/152696962-cf5e3eeb-50b4-431d-99f2-193448da56e9.gif" width="250" height="550"/>
 
 ---
 
