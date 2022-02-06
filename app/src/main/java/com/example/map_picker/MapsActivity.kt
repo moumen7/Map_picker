@@ -18,6 +18,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     var layers: MutableMap<String?, GeoJsonLayer?> = mutableMapOf<String?, GeoJsonLayer?>()
     lateinit var reverseGeoCode: ReverseGeoCoder
     var country: String? = ""
+    var prevcountry: String? = ""
     var r: InputStream? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -67,8 +68,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 )
 
                 //Styling of Layer
-                lay?.defaultPolygonStyle?.fillColor = Color.WHITE
-                lay?.defaultPolygonStyle?.strokeColor = Color.RED
+                lay?.defaultPolygonStyle?.fillColor = Color.BLACK
+                lay?.defaultPolygonStyle?.strokeColor = Color.BLACK
                 lay?.defaultPolygonStyle?.strokeWidth = 1F
 
 
@@ -87,8 +88,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             country = reverseGeoCode.nearestPlace(it.latitude, it.longitude).country.toLowerCase()
             // add layer to map
             layers.get(country)?.addLayerToMap()
+            layers.get(prevcountry)?.removeLayerFromMap()
             // Show Toast
             Toast.makeText(this, "$country Highlighted" ,Toast.LENGTH_SHORT ).show()
+            prevcountry = country
         }
     }
 
