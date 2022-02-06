@@ -1,4 +1,4 @@
-# Offline Map picker.
+# Offline Country Highlighter android.
 
 ## Click any country from map and the country gets highlighted.
 
