@@ -1,159 +1,96 @@
 package com.example.map_picker
 
-import android.content.res.Resources
 import android.graphics.Color
-import android.location.Address
-import android.location.Geocoder
-import android.nfc.Tag
 import android.os.Bundle
-import android.util.Log
-import android.util.Log.i
-import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.example.map_picker.Reversegeo.ReverseGeoCoder
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.MapStyleOptions
-import com.google.maps.android.collections.GroundOverlayManager
-import com.google.maps.android.collections.MarkerManager
-import com.google.maps.android.collections.PolygonManager
-import com.google.maps.android.collections.PolylineManager
-import com.google.maps.android.data.Layer
 import com.google.maps.android.data.geojson.GeoJsonLayer
-import com.google.maps.android.data.kml.KmlLayer
-import org.json.JSONObject
-import java.io.IOException
 import java.io.InputStream
 import java.util.*
 
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
-     var layers:MutableMap<String?,GeoJsonLayer?> = mutableMapOf<String?,GeoJsonLayer?>()
-    var layer2: KmlLayer? = null
-    private lateinit var mMap: GoogleMap
-    private var tv: TextView? = null
-    var jsonString: String = ""
-    var country: String? = ""
-    var current:String? = ""
-    val TAG = "MyActivity"
-    lateinit var obj:JSONObject
-    lateinit var myModel: geojson
-    var count:Int? = 0
-    lateinit var onclcik:Layer.OnFeatureClickListener
 
-    //private var mapmodel: MapModel? = null
+    var layers: MutableMap<String?, GeoJsonLayer?> = mutableMapOf<String?, GeoJsonLayer?>()
+    lateinit var reverseGeoCode: ReverseGeoCoder
+    var country: String? = ""
+    var r: InputStream? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
-        //mapmodel = ViewModelProviders.of(this).get(MapModel::class.java)
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+
+        //Intialize Map
         val mapFragment = supportFragmentManager
-            .findFragmentById(R.id.map) as SupportMapFragment
-
-
+                .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-
+        //Intialize reverse geocoder
+        r = resources.openRawResource(R.raw.cities15000)
+        reverseGeoCode = ReverseGeoCoder(r, false)
     }
-
-
 
     override fun onMapReady(googleMap: GoogleMap) {
+        //get all countries
         val isoCountryCodes = Locale.getISOCountries()
-        val markerManager = MarkerManager(googleMap)
-        val groundOverlayManager = GroundOverlayManager(googleMap)
-        val polygonManager = PolygonManager(googleMap)
-        val polylineManager = PolylineManager(googleMap)
 
-        for (code in isoCountryCodes)
-        {
-        if(code.toLowerCase()!="do")
-        {
-
-            var result: Boolean
-            val test: Int = getResources().getIdentifier(code.toLowerCase(),
-                    "raw", getPackageName())
-            if (test != 0) {
-                Log.i("active", code.toLowerCase())
-                val lay: GeoJsonLayer? = GeoJsonLayer(googleMap, getResources().getIdentifier(code.toLowerCase(),
-                        "raw", getPackageName()), this,markerManager, polygonManager, polylineManager, groundOverlayManager)
-
-                lay?.defaultPolygonStyle?.strokeColor = Color.TRANSPARENT
-                lay?.defaultPolygonStyle?.strokeWidth = 4F
-                lay?.defaultPolygonStyle?.fillColor = Color.TRANSPARENT
-
-                layers.put(code.toString().toLowerCase(),
-                        lay)
-                layers.get(code.toString().toLowerCase())?.addLayerToMap()
-                onclcik = Layer.OnFeatureClickListener {
-                    feature ->
-
-                    var a: Int? = layers.get(code.toString().toLowerCase())?.defaultPolygonStyle?.fillColor
-                    var b: Int?
-                    if(a == Color.TRANSPARENT)
-                    {
-                        a = Color.parseColor("#96555C")
-                        b = Color.BLACK
-                        Toast.makeText(this, "${code.toString()}: Highlighted",Toast.LENGTH_SHORT)
-                                .show()
-                    }
-                    else
-                    {
-                        Toast.makeText(this, "${code.toString()}: Highlight removed",Toast.LENGTH_SHORT)
-                                .show()
-                        a = Color.TRANSPARENT
-                        b = Color.TRANSPARENT
-                        country = ""
-                    }
-                    layers.get(country)?.defaultPolygonStyle?.fillColor = Color.TRANSPARENT
-                    layers.get(country)?.defaultPolygonStyle?.strokeColor = Color.TRANSPARENT
-                    layers.get(code.toString().toLowerCase())?.defaultPolygonStyle?.fillColor = a
-                    layers.get(code.toString().toLowerCase())?.defaultPolygonStyle?.strokeColor = b
-                    if(a != Color.TRANSPARENT)
-                    country = code.toString().toLowerCase()
-
-
-
-
-                }
-                layers.get(code.toString().toLowerCase())?.setOnFeatureClickListener(onclcik)
+        //Iterate through all countries and preprocess GeoJsonLayer to be added onclick
+        for (code in isoCountryCodes) {
+            var iso2code: String = code.toLowerCase()
+            //Handle corner cases, do is the code for domincain republic and it is a keyword in java so it can't be used as do
+            if (iso2code == "do") {
+                iso2code = "doo"
             }
-        }
-            else
-        {
-            val lay: GeoJsonLayer? = GeoJsonLayer(googleMap, getResources().getIdentifier("doo",
-                    "raw", getPackageName()), this, markerManager, polygonManager, polylineManager, groundOverlayManager)
-            lay?.defaultPolygonStyle?.strokeColor = Color.BLACK
-            lay?.defaultPolygonStyle?.strokeWidth = 2F
-            lay?.defaultPolygonStyle?.fillColor = Color.rgb(197, 163, 204)
+            //Remove Israel
+            if (iso2code == "il") {
+                iso2code = "ps"
+            }
 
-            layers.put(code.toString().toLowerCase(), lay)
-            layers.get(code.toString().toLowerCase())?.setOnFeatureClickListener(onclcik)
-        }
-
-
-
-        }
-
-        try {
-
-            val success = googleMap.setMapStyle(
-                MapStyleOptions.loadRawResourceStyle(
-                    this, R.raw.mapstyle
-
-                )
+            //Check if Geojson file exists
+            val test: Int = getResources().getIdentifier(
+                    iso2code,
+                    "raw", getPackageName()
             )
-            if (!success) {
+            //If the file exists. Preprocess the Geojson Layer
+            if (test != 0) {
+
+                //Read the file for the country
+                val lay: GeoJsonLayer? = GeoJsonLayer(
+                        googleMap, getResources().getIdentifier(
+                        iso2code,
+                        "raw", getPackageName()
+                ), this
+                )
+
+                //Styling of Layer
+                lay?.defaultPolygonStyle?.fillColor = Color.WHITE
+                lay?.defaultPolygonStyle?.strokeColor = Color.RED
+                lay?.defaultPolygonStyle?.strokeWidth = 1F
+
+
+                //add to a map ---> key is the iso2code, value is the corresponding geojson Layer
+                layers.put(
+                        iso2code,
+                        lay
+                )
 
             }
-        } catch (e: Resources.NotFoundException) {
-
         }
 
 
-
-
-
+        googleMap.setOnMapClickListener {
+            // reversegeocode the clicked position
+            country = reverseGeoCode.nearestPlace(it.latitude, it.longitude).country.toLowerCase()
+            // add layer to map
+            layers.get(country)?.addLayerToMap()
+            // Show Toast
+            Toast.makeText(this, "$country Highlighted" ,Toast.LENGTH_SHORT ).show()
+        }
     }
+
+
 }
